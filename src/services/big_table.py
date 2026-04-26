@@ -2,15 +2,21 @@
 Contains all logic for the "big table" - all students, all scores, the single source of truth about the grades
 """
 
-from typing import Optional
+from typing import Callable, Optional
 
+from src.models.components import Component
 from src.models.student import Student
-from src.services.grading import grading_2025
 
 
 class BigTable:
-    def __init__(self):
+    def __init__(
+        self,
+        components: Callable[[], list[Component]],
+        grading: Callable[[float], float],
+    ):
         self.__students: list[Student] = []
+        self.__components = components
+        self.__grading = grading
 
     # Create
     def add_student(
@@ -24,7 +30,7 @@ class BigTable:
             first_name=first_name,
             last_name=last_name,
             faculty_number=faculty_number,
-            components=grading_2025(),
+            components=self.__components(),
         )
         self.__students.append(student)
         return student
@@ -64,3 +70,102 @@ class BigTable:
                 f"Student with faculty number '{faculty_number}' not found."
             )
         self.__students.remove(student)
+
+    # Component points CRUD
+    def set_points(
+        self, faculty_number: str, component_name: str, points: float
+    ) -> Component:
+        student = self.get_by_faculty_number(faculty_number)
+        if student is None:
+            raise ValueError(
+                f"Student with faculty number '{faculty_number}' not found."
+            )
+        component = next(
+            (c for c in student.components if c.name == component_name), None
+        )
+        if component is None:
+            raise ValueError(
+                f"Component '{component_name}' not found for student '{faculty_number}'."
+            )
+        if points < 0 or points > component.max_points:
+            raise ValueError(
+                f"Points must be between 0 and {component.max_points} for '{component_name}'."
+            )
+        updated_components = [
+            c.model_copy(update={"points": points}) if c.name == component_name else c
+            for c in student.components
+        ]
+        self.update_student(faculty_number, components=updated_components)
+        return next(c for c in updated_components if c.name == component_name)
+
+    def get_points(self, faculty_number: str, component_name: str) -> Optional[float]:
+        student = self.get_by_faculty_number(faculty_number)
+        if student is None:
+            raise ValueError(
+                f"Student with faculty number '{faculty_number}' not found."
+            )
+        component = next(
+            (c for c in student.components if c.name == component_name), None
+        )
+        if component is None:
+            raise ValueError(
+                f"Component '{component_name}' not found for student '{faculty_number}'."
+            )
+        return component.points
+
+    def clear_points(self, faculty_number: str, component_name: str) -> Component:
+        student = self.get_by_faculty_number(faculty_number)
+        if student is None:
+            raise ValueError(
+                f"Student with faculty number '{faculty_number}' not found."
+            )
+        component = next(
+            (c for c in student.components if c.name == component_name), None
+        )
+        if component is None:
+            raise ValueError(
+                f"Component '{component_name}' not found for student '{faculty_number}'."
+            )
+        updated_components = [
+            c.model_copy(update={"points": None}) if c.name == component_name else c
+            for c in student.components
+        ]
+        self.update_student(faculty_number, components=updated_components)
+        return next(c for c in updated_components if c.name == component_name)
+
+    # Bonus points CRUD
+    BONUS_MAX = 5
+
+    def set_bonus(self, faculty_number: str, bonus: int) -> Student:
+        if bonus < 0 or bonus > self.BONUS_MAX:
+            raise ValueError(f"Bonus must be between 0 and {self.BONUS_MAX}.")
+        return self.update_student(faculty_number, bonus=bonus)
+
+    def get_bonus(self, faculty_number: str) -> int:
+        student = self.get_by_faculty_number(faculty_number)
+        if student is None:
+            raise ValueError(
+                f"Student with faculty number '{faculty_number}' not found."
+            )
+        return student.bonus
+
+    def clear_bonus(self, faculty_number: str) -> Student:
+        return self.update_student(faculty_number, bonus=0)
+
+    def add_bonus_point(self, faculty_number: str) -> Student:
+        current = self.get_bonus(faculty_number)
+        return self.set_bonus(faculty_number, current + 1)
+
+    def get_total_points_for_student(self, faculty_number: str) -> float:
+        student = self.get_by_faculty_number(faculty_number)
+        if student is None:
+            raise ValueError(
+                f"Student with faculty number '{faculty_number}' not found."
+            )
+        total_points = sum(c.points for c in student.components if c.points is not None)
+        return total_points + student.bonus
+
+    def calculate_grade(self, faculty_number: str) -> float:
+        total_points = self.get_total_points_for_student(faculty_number)
+
+        return self.__grading(total_points)
