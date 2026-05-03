@@ -4,8 +4,8 @@ Contains all logic for the "big table" - all students, all scores, the single so
 
 from typing import Callable, Optional
 
-from src.models.components import Component
-from src.models.student import Student
+from course_db.models.components import Component
+from course_db.models.student import Student, student_columns
 
 
 class BigTable:
@@ -169,3 +169,6 @@ class BigTable:
         total_points = self.get_total_points_for_student(faculty_number)
 
         return self.__grading(total_points)
+
+    def columns(self) -> list[str]:
+        return student_columns(self.__components())
