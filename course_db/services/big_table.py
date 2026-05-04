@@ -170,5 +170,6 @@ class BigTable:
 
         return self.__grading(total_points)
 
+    @property
     def columns(self) -> list[str]:
         return student_columns(self.__components())
