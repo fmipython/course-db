@@ -170,6 +170,9 @@ class BigTable:
 
         return self.__grading(total_points)
 
+    def get_all(self) -> list[Student]:
+        return self.__students[:]
+
     @property
     def columns(self) -> list[str]:
         return student_columns(self.__components())
