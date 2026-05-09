@@ -79,11 +79,38 @@ def _to_structured(raw: list[list[str]]) -> BigTable:
 
     expected_columns = table.columns
 
-    print(actual_columns)
-    print(expected_columns)
-
     if actual_columns != expected_columns:
         raise GoogleSheetsError(
             "Spreadsheet columns do not match expected format. "
             f"Expected: {expected_columns}, got: {actual_columns}"
         )
+
+    semi_structured = [_to_structured_row(row, actual_columns) for row in raw[1:]]
+
+    for row in semi_structured:
+        student_id = row[expected_columns[2]]
+        # Main info
+        table.add_student(
+            row[expected_columns[0]], row[expected_columns[1]], student_id
+        )
+
+        # Bonus points
+        table.set_bonus(student_id, int(row["Бонус"]))
+
+        # Components
+        for component in expected_columns[3:-3]:
+            points = row[component]
+            if points != "":
+                table.set_points(
+                    student_id, component, float(row[component].replace(",", "."))
+                )
+
+    return table
+
+
+def _to_structured_row(row: list[str], columns: list[str]) -> dict[str, str]:
+    result = {}
+    for i, column in enumerate(columns):
+        result[column] = row[i]
+
+    return result
