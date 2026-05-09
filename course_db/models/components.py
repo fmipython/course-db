@@ -10,4 +10,4 @@ class Component(BaseModel):
 
 
 def component_columns(component: Component) -> str:
-    return f"{component.name} ({component.max_points}т.)"
+    return f"{component.name}"
