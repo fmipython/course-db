@@ -1,10 +1,12 @@
 import typer
 from rich.console import Console
 
+from course_db.models.calendar import Calendar
 from course_db.repository.google_sheets import load, save
 from course_db.services.big_table import BigTable
 from course_db.services.grading import components_2025, grading_2025
 from course_db.services.visualization import render_table
+from course_db.services.calendar import load_calendar
 
 app = typer.Typer()
 
@@ -184,6 +186,13 @@ def load_table(
     """Load student data from a Google Sheets document and display it."""
     loaded = load("1NTZ26M6tKWzb5g7t0B83i4J-dQrqh7O-TnlAPxd4gsw")
     Console().print(render_table(loaded, summary=summary))
+
+
+@app.command()
+def get_calendar():
+    result = load_calendar()
+
+    typer.echo(result.model_dump())
 
 
 if __name__ == "__main__":

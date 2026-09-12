@@ -19,9 +19,9 @@ SAMPLE_RANGE_NAME = "Test sheet"
 
 
 def load(spreadsheet_id: str) -> BigTable:
-    creds = _setup_auth()
+    creds = setup_auth()
 
-    raw = _load_raw(creds)
+    raw = load_raw(creds, SAMPLE_SPREADSHEET_ID)
 
     return _to_structured(raw)
 
@@ -30,7 +30,7 @@ def save(table: BigTable):
     pass
 
 
-def _setup_auth():
+def setup_auth():
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -52,7 +52,7 @@ def _setup_auth():
     return creds
 
 
-def _load_raw(creds) -> list[list[str]]:
+def load_raw(creds, spreadsheet_id, spreadsheet_range) -> list[list[str]]:
     try:
         service = build("sheets", "v4", credentials=creds)
 
@@ -60,7 +60,7 @@ def _load_raw(creds) -> list[list[str]]:
         sheet = service.spreadsheets()
         result = (
             sheet.values()
-            .get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=SAMPLE_RANGE_NAME)
+            .get(spreadsheetId=spreadsheet_id, range=spreadsheet_range)
             .execute()
         )
         values = result.get("values", [])
