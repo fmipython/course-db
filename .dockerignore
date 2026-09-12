@@ -1,0 +1,9 @@
+.venv
+.git
+__pycache__
+*.pyc
+course_db.egg-info
+.env
+credentials.json
+token.json
+token2.json
