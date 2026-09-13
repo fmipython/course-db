@@ -3,7 +3,7 @@ import os
 import dotenv
 
 from course_db.models.calendar import Calendar, Event, EventType
-from course_db.repository.google_sheets import setup_auth, load_raw
+from course_db.repository.google_sheets import load_raw, setup_auth
 
 
 def group_by_threes(data: list) -> list[list]:
@@ -13,9 +13,7 @@ def group_by_threes(data: list) -> list[list]:
         [
             w,
             d,
-            (
-                e if len(e) == len(w) else e + [""] * (len(w) - len(e))
-            ),  # Add padding to events
+            (e if len(e) == len(w) else e + [""] * (len(w) - len(e))),  # Add padding to events
         ]
         for w, d, e in grouped
     ]
